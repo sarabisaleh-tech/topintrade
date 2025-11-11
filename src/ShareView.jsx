@@ -236,7 +236,7 @@ export default function ShareView() {
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={`px-4 py-2 rounded-lg transition cursor-pointer ${
               activeTab === 'dashboard'
                 ? 'bg-purple-600 text-white'
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'
@@ -246,7 +246,7 @@ export default function ShareView() {
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={`px-4 py-2 rounded-lg transition cursor-pointer ${
               activeTab === 'stats'
                 ? 'bg-purple-600 text-white'
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'
@@ -256,7 +256,7 @@ export default function ShareView() {
           </button>
           <button
             onClick={() => setActiveTab('monthly')}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={`px-4 py-2 rounded-lg transition cursor-pointer ${
               activeTab === 'monthly'
                 ? 'bg-purple-600 text-white'
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'
@@ -266,7 +266,7 @@ export default function ShareView() {
           </button>
           <button
             onClick={() => setActiveTab('all-trades')}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={`px-4 py-2 rounded-lg transition cursor-pointer ${
               activeTab === 'all-trades'
                 ? 'bg-purple-600 text-white'
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'

@@ -44,6 +44,19 @@ h1 {
 
 /* Global button styles removed to allow Tailwind classes to work properly */
 
+/* Add cursor pointer to all clickable elements */
+button,
+a,
+[role="button"],
+[onclick],
+label[for],
+select,
+input[type="checkbox"],
+input[type="radio"],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
