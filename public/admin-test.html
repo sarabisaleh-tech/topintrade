@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Access - Top In Trade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        .info-box {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-item:last-child { border-bottom: none; }
+        .label { color: #718096; font-weight: 500; }
+        .value { color: #2d3748; font-weight: 600; }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: 600;
+            display: none;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            display: block;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 دسترسی ادمین - تست</h1>
+
+        <div class="info-box">
+            <h2 style="margin-bottom: 15px; color: #2d3748;">📋 اطلاعات ورود</h2>
+            <div class="info-item">
+                <span class="label">ایمیل:</span>
+                <span class="value">salehsarubi@gmail.com</span>
+            </div>
+            <div class="info-item">
+                <span class="label">رمز عبور:</span>
+                <span class="value">Saleh@123456</span>
+            </div>
+            <div class="info-item">
+                <span class="label">پروژه Firebase:</span>
+                <span class="value">topinanaliz</span>
+            </div>
+            <div class="info-item">
+                <span class="label">وضعیت:</span>
+                <span class="value">👑 ادمین</span>
+            </div>
+        </div>
+
+        <div class="info-box" style="background: #fff5f5; border: 2px solid #fc8181;">
+            <h3 style="color: #c53030; margin-bottom: 10px;">⚠️ مشکل صفحه خالی</h3>
+            <p style="color: #742a2a; line-height: 1.6;">
+                صفحه اصلی React خالی است. این معمولاً به دلیل خطای JavaScript است.
+                از دکمه‌های زیر برای دسترسی مستقیم استفاده کنید.
+            </p>
+        </div>
+
+        <button class="btn btn-primary" onclick="openMainSite()">
+            🌐 باز کردن صفحه اصلی (ممکن است خالی باشد)
+        </button>
+
+        <button class="btn btn-primary" onclick="openWithClearCache()">
+            🔄 باز کردن با پاک کردن Cache
+        </button>
+
+        <div id="status" class="status"></div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #edf2f7; border-radius: 10px;">
+            <h3 style="margin-bottom: 10px; color: #2d3748;">📌 راهنمای حل مشکل:</h3>
+            <ol style="padding-right: 20px; color: #4a5568; line-height: 2;">
+                <li>کلیدهای <strong>Ctrl+Shift+Delete</strong> رو بزنید</li>
+                <li>گزینه <strong>"Cached images and files"</strong> رو انتخاب کنید</li>
+                <li>روی <strong>"Clear data"</strong> کلیک کنید</li>
+                <li>صفحه رو Refresh کنید (<strong>F5</strong>)</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function openMainSite() {
+            const status = document.getElementById('status');
+            status.className = 'status success';
+            status.textContent = '🚀 در حال باز کردن صفحه اصلی...';
+            setTimeout(() => {
+                window.location.href = 'http://localhost:5173';
+            }, 1000);
+        }
+
+        function openWithClearCache() {
+            const status = document.getElementById('status');
+            status.className = 'status success';
+            status.textContent = '🔄 لطفاً Cache رو پاک کنید و F5 بزنید...';
+
+            // Try to clear cache programmatically (might not work in all browsers)
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+
+            setTimeout(() => {
+                window.location.href = 'http://localhost:5173';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
