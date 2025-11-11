@@ -1814,7 +1814,8 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
     : [
         { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
         { id: 'stopAnalysis', label: 'Stop Analysis', icon: Target },
-        { id: 'monthlyReport', label: 'Monthly Report', icon: Calendar }
+        { id: 'monthlyReport', label: 'Monthly Report', icon: Calendar },
+        { id: 'allTrades', label: 'All Trades', icon: TrendingDown }
       ];
   // محاسبه Orig Target - کمترین Peak Target در بین 80% بالاترین ماه‌ها
   const avgMonthlyTarget = useMemo(() => {
