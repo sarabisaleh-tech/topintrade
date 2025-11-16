@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Fix Missing User Documents</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }
+    button { padding: 10px 20px; margin: 10px; cursor: pointer; background: #4CAF50; border: none; color: white; border-radius: 5px; }
+    .error { color: #ff4444; }
+    .success { color: #4CAF50; }
+    .warning { color: #ffaa00; }
+    pre { background: #2a2a2a; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>🔧 Fix Missing User Documents</h1>
+
+  <p>این ابزار کاربرانی که فقط در Authentication هستند ولی document در Firestore ندارند را پیدا و درست میکند.</p>
+
+  <button onclick="checkAndFixUsers()">چک و درست کردن کاربران</button>
+
+  <pre id="output">آماده برای شروع...</pre>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBE8gmrTNdsFb_Ho15mDQap2VzyLsxudU4",
+      authDomain: "topanalyzertrade.firebaseapp.com",
+      projectId: "topanalyzertrade",
+      storageBucket: "topanalyzertrade.firebasestorage.app",
+      messagingSenderId: "412033042169",
+      appId: "1:412033042169:web:8270d77380b880edaa4428",
+      measurementId: "G-CVC3FWXPH1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const output = document.getElementById('output');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('fa-IR');
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+      output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    // چک کردن کاربر فعلی
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        log(`✅ شما لاگین هستید: ${user.email}`, 'success');
+      } else {
+        log('⚠️ لطفاً اول لاگین کنید!', 'warning');
+      }
+    });
+
+    window.checkAndFixUsers = async function() {
+      clearOutput();
+
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        log('❌ لطفاً ابتدا در سایت اصلی لاگین کنید!', 'error');
+        log('💡 برو به topintrade.com و login کن، بعد برگرد اینجا', 'warning');
+        return;
+      }
+
+      log(`🔍 چک میکنیم کاربر فعلی: ${currentUser.email}`);
+      log('─────────────────────────────────────');
+
+      try {
+        // چک document کاربر فعلی در Firestore
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          log('❌ Document شما در Firestore وجود ندارد!', 'error');
+          log('📝 در حال ساخت document...', 'warning');
+
+          // ساخت document
+          await setDoc(userDocRef, {
+            email: currentUser.email,
+            displayName: currentUser.displayName || currentUser.email.split('@')[0],
+            photoURL: currentUser.photoURL || null,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+            isAdmin: false
+          });
+
+          log('✅ Document شما با موفقیت ساخته شد!', 'success');
+          log(`   UID: ${currentUser.uid}`);
+          log(`   Email: ${currentUser.email}`);
+          log('─────────────────────────────────────');
+          log('🎉 حالا میتونید به سایت برید!', 'success');
+        } else {
+          log('✅ Document شما در Firestore وجود دارد', 'success');
+          const data = userDoc.data();
+          log(`   Email: ${data.email}`);
+          log(`   Display Name: ${data.displayName || 'N/A'}`);
+          log(`   Created At: ${data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('fa-IR') : 'N/A'}`);
+          log('─────────────────────────────────────');
+          log('✅ همه چیز درسته!', 'success');
+        }
+
+      } catch (error) {
+        log('❌ خطا رخ داد:', 'error');
+        log(`   ${error.message}`, 'error');
+        console.error('Full error:', error);
+      }
+    };
+  </script>
+
+  <hr style="margin: 40px 0; border-color: #444;">
+
+  <h2>📖 راهنما:</h2>
+  <ol style="line-height: 2;">
+    <li>اگه لاگین نیستی، برو به <a href="https://topintrade.com" style="color: #4CAF50;">topintrade.com</a> و login کن</li>
+    <li>بعد برگرد اینجا و روی دکمه بالا کلیک کن</li>
+    <li>اگه document نداشتی، خودکار درست میشه</li>
+    <li>بعد دوباره برو سایت و امتحان کن</li>
+  </ol>
+</body>
+</html>

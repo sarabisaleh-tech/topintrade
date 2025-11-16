@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Invite Codes</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }
+    button { padding: 10px 20px; margin: 10px; cursor: pointer; background: #4CAF50; border: none; color: white; border-radius: 5px; }
+    pre { background: #2a2a2a; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .error { color: #ff4444; }
+    .success { color: #4CAF50; }
+    .warning { color: #ffaa00; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug Invite Codes System</h1>
+
+  <button onclick="testReadAllInvites()">1️⃣ نمایش همه کدهای دعوت</button>
+  <button onclick="testValidateCode()">2️⃣ تست کد خاص</button>
+  <button onclick="testFirestoreConnection()">3️⃣ تست اتصال Firestore</button>
+
+  <div style="margin-top: 20px;">
+    <label>کد دعوت برای تست:</label>
+    <input type="text" id="testCode" placeholder="BZL3EC7V" style="padding: 5px; width: 200px;">
+  </div>
+
+  <pre id="output">در انتظار تست...</pre>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBE8gmrTNdsFb_Ho15mDQap2VzyLsxudU4",
+      authDomain: "topanalyzertrade.firebaseapp.com",
+      projectId: "topanalyzertrade",
+      storageBucket: "topanalyzertrade.firebasestorage.app",
+      messagingSenderId: "412033042169",
+      appId: "1:412033042169:web:8270d77380b880edaa4428",
+      measurementId: "G-CVC3FWXPH1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const output = document.getElementById('output');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('fa-IR');
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+      output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    // Test 1: خواندن همه کدهای دعوت
+    window.testReadAllInvites = async function() {
+      clearOutput();
+      log('🔍 در حال خواندن همه کدهای دعوت از Firestore...');
+
+      try {
+        const invitesSnapshot = await getDocs(collection(db, 'invites'));
+
+        if (invitesSnapshot.empty) {
+          log('⚠️ هیچ کد دعوتی در database یافت نشد!', 'warning');
+          return;
+        }
+
+        log(`✅ تعداد کدهای دعوت: ${invitesSnapshot.size}`, 'success');
+        log('─────────────────────────────────────');
+
+        invitesSnapshot.forEach((doc, index) => {
+          const data = doc.data();
+          log(`📋 کد ${index + 1}:`);
+          log(`   ID: ${doc.id}`);
+          log(`   Code: ${data.code}`);
+          log(`   Status: ${data.status}`);
+          log(`   Created By: ${data.createdBy || 'N/A'}`);
+          log(`   Used By: ${data.usedBy || 'استفاده نشده'}`);
+          log(`   Created At: ${data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('fa-IR') : 'N/A'}`);
+          log('─────────────────────────────────────');
+        });
+
+      } catch (error) {
+        log(`❌ خطا در خواندن کدهای دعوت:`, 'error');
+        log(`   Error Code: ${error.code}`, 'error');
+        log(`   Error Message: ${error.message}`, 'error');
+        console.error('Full error:', error);
+      }
+    };
+
+    // Test 2: تست کد خاص
+    window.testValidateCode = async function() {
+      clearOutput();
+      const testCode = document.getElementById('testCode').value.toUpperCase();
+
+      if (!testCode) {
+        log('❌ لطفاً یک کد دعوت وارد کنید', 'error');
+        return;
+      }
+
+      log(`🔍 در حال جستجو برای کد: ${testCode}`);
+
+      try {
+        // Method 1: Query با where
+        log('\n📍 روش 1: استفاده از Query');
+        const invitesQuery = query(
+          collection(db, 'invites'),
+          where('code', '==', testCode),
+          where('status', '==', 'active')
+        );
+
+        const querySnapshot = await getDocs(invitesQuery);
+
+        if (querySnapshot.empty) {
+          log('❌ کد پیدا نشد با Query', 'error');
+
+          // بیایید ببینیم آیا با status دیگه‌ای هست
+          const allCodesQuery = query(
+            collection(db, 'invites'),
+            where('code', '==', testCode)
+          );
+          const allCodesSnapshot = await getDocs(allCodesQuery);
+
+          if (allCodesSnapshot.empty) {
+            log('❌ این کد اصلاً در database وجود ندارد!', 'error');
+          } else {
+            allCodesSnapshot.forEach(doc => {
+              const data = doc.data();
+              log(`⚠️ کد یافت شد اما status آن "${data.status}" است`, 'warning');
+            });
+          }
+        } else {
+          log('✅ کد با موفقیت پیدا شد!', 'success');
+          querySnapshot.forEach(doc => {
+            const data = doc.data();
+            log(`   ID: ${doc.id}`);
+            log(`   Code: ${data.code}`);
+            log(`   Status: ${data.status}`);
+            log(`   Used By: ${data.usedBy || 'استفاده نشده'}`);
+          });
+        }
+
+        // Method 2: خواندن همه و مقایسه
+        log('\n📍 روش 2: خواندن همه و مقایسه دستی');
+        const allInvites = await getDocs(collection(db, 'invites'));
+        let found = false;
+
+        allInvites.forEach(doc => {
+          const data = doc.data();
+          if (data.code === testCode) {
+            found = true;
+            log(`✅ کد پیدا شد در لیست کامل:`, 'success');
+            log(`   Status: ${data.status}`);
+            log(`   Match: ${data.code === testCode ? 'دقیقاً یکسان' : 'مطابقت ندارد'}`);
+          }
+        });
+
+        if (!found) {
+          log('❌ کد در لیست کامل هم پیدا نشد', 'error');
+        }
+
+      } catch (error) {
+        log(`❌ خطا در تست کد:`, 'error');
+        log(`   Error Code: ${error.code}`, 'error');
+        log(`   Error Message: ${error.message}`, 'error');
+        console.error('Full error:', error);
+      }
+    };
+
+    // Test 3: تست اتصال
+    window.testFirestoreConnection = async function() {
+      clearOutput();
+      log('🔍 در حال تست اتصال به Firestore...');
+
+      try {
+        // تست خواندن یک collection
+        const testSnapshot = await getDocs(collection(db, 'invites'));
+        log('✅ اتصال به Firestore موفقیت‌آمیز بود!', 'success');
+        log(`   تعداد documents در invites: ${testSnapshot.size}`);
+
+        // چک کردن Rules
+        log('\n📍 تست دسترسی‌ها:');
+        log('   ✅ Read access: دارد (چون توانستیم بخوانیم)');
+
+      } catch (error) {
+        log(`❌ خطا در اتصال:`, 'error');
+        log(`   Error Code: ${error.code}`, 'error');
+        log(`   Error Message: ${error.message}`, 'error');
+
+        if (error.code === 'permission-denied') {
+          log('   💡 مشکل: Firestore Rules اجازه دسترسی نمیدهد', 'warning');
+        }
+      }
+    };
+
+    // Auto-run first test
+    setTimeout(() => {
+      log('🚀 اجرای خودکار تست اول...\n');
+      testReadAllInvites();
+    }, 500);
+  </script>
+</body>
+</html>

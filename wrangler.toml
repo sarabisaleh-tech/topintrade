@@ -1,0 +1,19 @@
+# Cloudflare Worker Configuration
+# این فایل برای deploy کردن Worker روی Cloudflare استفاده میشه
+
+name = "topintrade-firebase-proxy"
+type = "javascript"
+account_id = ""  # باید از Cloudflare Dashboard بگیرید
+workers_dev = true
+route = ""
+zone_id = ""
+
+[env.production]
+name = "topintrade-firebase-proxy-production"
+route = "https://api.topintrade.com/*"  # دامنه custom خودتون
+
+[build]
+command = ""
+
+[build.upload]
+format = "service-worker"

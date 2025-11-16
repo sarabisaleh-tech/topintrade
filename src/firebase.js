@@ -1,7 +1,7 @@
 // Firebase Configuration
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Firebase config - پروژه جدید
@@ -21,8 +21,12 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication
 export const auth = getAuth(app);
 
-// Initialize Firestore
-export const db = getFirestore(app);
+// Initialize Firestore با تنظیمات مخصوص Proxy
+// استفاده از long-polling به جای WebSocket برای سازگاری با Worker
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, // استفاده از HTTP long-polling
+  experimentalAutoDetectLongPolling: false, // غیرفعال کردن auto-detect
+});
 
 // Initialize Firebase Storage
 export const storage = getStorage(app);

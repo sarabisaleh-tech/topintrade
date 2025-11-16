@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Invite Codes</title>
+</head>
+<body>
+  <h1>Test Firestore Invite Codes</h1>
+  <button onclick="testRead()">Test Read Invites</button>
+  <button onclick="testCreate()">Test Create Invite (Need Login)</button>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBE8gmrTNdsFb_Ho15mDQap2VzyLsxudU4",
+      authDomain: "topanalyzertrade.firebaseapp.com",
+      projectId: "topanalyzertrade",
+      storageBucket: "topanalyzertrade.firebasestorage.app",
+      messagingSenderId: "412033042169",
+      appId: "1:412033042169:web:8270d77380b880edaa4428",
+      measurementId: "G-CVC3FWXPH1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.testRead = async function() {
+      const output = document.getElementById('output');
+      output.textContent = 'Testing read access to invites collection...\n';
+
+      try {
+        const invitesSnapshot = await getDocs(collection(db, 'invites'));
+        output.textContent += `✅ Success! Found ${invitesSnapshot.size} invite codes\n\n`;
+
+        invitesSnapshot.forEach(doc => {
+          const data = doc.data();
+          output.textContent += `Code: ${data.code}, Status: ${data.status}\n`;
+        });
+      } catch (error) {
+        output.textContent += `❌ Error: ${error.message}\n`;
+        output.textContent += `Code: ${error.code}\n`;
+        console.error('Full error:', error);
+      }
+    };
+
+    window.testCreate = function() {
+      const output = document.getElementById('output');
+      output.textContent = 'You need to be logged in as admin to create invite codes.\n';
+      output.textContent += 'Please test this from the main application.\n';
+    };
+  </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, TrendingDown, Target, BarChart3, Calendar, Upload, Menu, X, Clock, LogOut, Shield, ArrowLeft, Activity } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth, isAdminEmail } from './AuthContext';
 import AdminPanel from './AdminPanel.jsx';
 import ProfileMenu from './ProfileMenu.jsx';
 import {
@@ -15,12 +15,9 @@ import {
   listenToCryptoUserData as listenToUserData,
   migrateCryptoFromLocalStorage as migrateFromLocalStorage,
   forceSaveCrypto as forceSave
-} from './cryptoFirestoreData.js';
-import { testFirestoreConnection } from './testFirestore.js';
+} from './cryptoSupabaseData.js';
 import MT5DashboardContent from './components/MT5DashboardContent';
 import CryptoLiveTrades from './components/crypto/CryptoLiveTrades';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
 // Theme Colors - Crypto Theme (Orange/Bitcoin)
 const themeColors = {
   // Primary Colors - نارنجی برای کریپتو
@@ -1985,7 +1982,7 @@ export default function CryptoJournalApp({ onBack, liveMode = false, exchangeInf
               )}
 
               {/* Admin Panel Button - فقط برای Admin و فقط در حالت عادی (نه shared view) */}
-              {!isSharedView && currentUser?.email?.toLowerCase() === 'titteam.1404@gmail.com' && (
+              {!isSharedView && isAdminEmail(currentUser?.email) && (
                 <button
                   onClick={() => setShowAdminPanel(true)}
                   className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"

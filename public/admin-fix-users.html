@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin: Fix All Users</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; max-width: 1200px; margin: 0 auto; }
+    button { padding: 10px 20px; margin: 10px; cursor: pointer; background: #4CAF50; border: none; color: white; border-radius: 5px; font-size: 16px; }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .error { color: #ff4444; }
+    .success { color: #4CAF50; }
+    .warning { color: #ffaa00; }
+    pre { background: #2a2a2a; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; max-height: 600px; overflow-y: auto; }
+    h1 { color: #4CAF50; }
+    .login-section { background: #2a2a2a; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    input { padding: 10px; width: 300px; border-radius: 5px; border: 1px solid #444; background: #333; color: #fff; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>🔧 Admin Panel: Fix Missing User Documents</h1>
+
+  <div class="login-section" id="loginSection">
+    <h2>ورود ادمین</h2>
+    <p>برای استفاده از این ابزار، باید با اکانت ادمین login کنید.</p>
+    <div>
+      <input type="email" id="adminEmail" placeholder="ایمیل ادمین" value="sarabisaleh@gmail.com">
+      <input type="password" id="adminPassword" placeholder="پسورد">
+      <button onclick="adminLogin()">ورود</button>
+    </div>
+  </div>
+
+  <div id="toolsSection" style="display: none;">
+    <p><strong class="warning">⚠️ این ابزار فقط برای ادمین است!</strong></p>
+    <p>کاربرانی که فقط در Authentication هستند ولی document در Firestore ندارند را پیدا و درست میکند.</p>
+
+    <button onclick="fixSpecificUser()">درست کردن یک کاربر خاص</button>
+    <input type="text" id="specificUID" placeholder="UID کاربر" style="width: 400px;">
+
+    <hr>
+    <p class="success">متأسفانه Firebase از browser اجازه list کردن همه users رو نمیده. فقط میتونیم یک کاربر خاص رو fix کنیم.</p>
+  </div>
+
+  <pre id="output">آماده...</pre>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBE8gmrTNdsFb_Ho15mDQap2VzyLsxudU4",
+      authDomain: "topanalyzertrade.firebaseapp.com",
+      projectId: "topanalyzertrade",
+      storageBucket: "topanalyzertrade.firebasestorage.app",
+      messagingSenderId: "412033042169",
+      appId: "1:412033042169:web:8270d77380b880edaa4428"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const output = document.getElementById('output');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('fa-IR');
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+      output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    window.adminLogin = async function() {
+      const email = document.getElementById('adminEmail').value;
+      const password = document.getElementById('adminPassword').value;
+
+      if (!email || !password) {
+        alert('لطفاً ایمیل و پسورد را وارد کنید');
+        return;
+      }
+
+      clearOutput();
+      log('🔐 در حال ورود...', 'warning');
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        log('✅ ورود موفق!', 'success');
+        log(`   ایمیل: ${email}`);
+
+        // Check if admin
+        const adminEmails = ['salehsarubi@gmail.com', 'sarabisaleh@gmail.com'];
+        if (!adminEmails.includes(email.toLowerCase())) {
+          log('❌ شما ادمین نیستید!', 'error');
+          return;
+        }
+
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('toolsSection').style.display = 'block';
+
+      } catch (error) {
+        log('❌ خطا در ورود:', 'error');
+        log(`   ${error.message}`, 'error');
+      }
+    };
+
+    window.fixSpecificUser = async function() {
+      const uid = document.getElementById('specificUID').value.trim();
+
+      if (!uid) {
+        alert('لطفاً UID کاربر را وارد کنید');
+        return;
+      }
+
+      clearOutput();
+      log(`🔍 در حال بررسی کاربر با UID: ${uid}`);
+      log('─────────────────────────────────────');
+
+      try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          log('✅ این کاربر قبلاً document داره', 'success');
+          const data = userDoc.data();
+          log(`   Email: ${data.email}`);
+          log(`   Username: ${data.username || 'N/A'}`);
+          log(`   Created: ${data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('fa-IR') : 'N/A'}`);
+        } else {
+          log('❌ Document وجود ندارد!', 'error');
+          log('💡 متأسفانه نمیتونیم از اینجا بفهمیم ایمیل این UID چیه', 'warning');
+          log('📝 باید دستی document رو بسازیم');
+          log('');
+
+          const email = prompt('ایمیل این کاربر چیه؟');
+          if (!email) {
+            log('❌ لغو شد', 'error');
+            return;
+          }
+
+          log(`📝 در حال ساخت document برای: ${email}`);
+
+          await setDoc(userDocRef, {
+            email: email,
+            username: email.split('@')[0],
+            displayName: email.split('@')[0],
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+            isAdmin: false
+          });
+
+          log('✅ Document با موفقیت ساخته شد!', 'success');
+          log(`   حالا کاربر ${email} میتونه login کنه`);
+        }
+
+      } catch (error) {
+        log('❌ خطا:', 'error');
+        log(`   ${error.message}`, 'error');
+        console.error(error);
+      }
+    };
+  </script>
+</body>
+</html>

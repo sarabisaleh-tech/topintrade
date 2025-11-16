@@ -6,7 +6,7 @@ const JournalTypeSelection = ({ onSelectType, onBack }) => {
     {
       id: 'journal',
       title: 'Forex Trading',
-      description: 'Track your Forex trades with MT5 integration',
+      description: 'Manually track your Forex trades with detailed journal entries',
       icon: TrendingUp,
       gradient: 'from-blue-500 via-purple-500 to-pink-500',
       mode: 'journal'

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, TrendingDown, Target, BarChart3, Calendar, Upload, Menu, X, Clock, LogOut, Shield, ArrowLeft, Activity } from 'lucide-react';
-import { useAuth } from './AuthContext';
+import { useAuth, isAdminEmail } from './AuthContext';
 import AdminPanel from './AdminPanel.jsx';
 import ProfileMenu from './ProfileMenu.jsx';
 import {
@@ -15,11 +15,8 @@ import {
   listenToUserData,
   migrateFromLocalStorage,
   forceSave
-} from './firestoreData.js';
-import { testFirestoreConnection } from './testFirestore.js';
+} from './supabaseDataAPI.js';
 import MT5DashboardContent from './components/MT5DashboardContent';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
 // Theme Colors - می‌تونی اینجا رنگ‌ها رو تغییر بدی
 const themeColors = {
   // Primary Colors
@@ -1835,7 +1832,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
           50% { opacity: 0.3; }
         }
         .starry-bg {
-          background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+          background: #000000;
           position: relative;
           min-height: 100vh;
         }
@@ -1996,7 +1993,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
               )}
 
               {/* Admin Panel Button - فقط برای Admin و فقط در حالت عادی (نه shared view) */}
-              {!isSharedView && currentUser?.email?.toLowerCase() === 'titteam.1404@gmail.com' && (
+              {!isSharedView && isAdminEmail(currentUser?.email) && (
                 <button
                   onClick={() => setShowAdminPanel(true)}
                   className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"

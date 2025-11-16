@@ -7,9 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:firebase": "npm run build && firebase deploy",
+    "deploy:vercel": "npm run build && vercel --prod",
+    "deploy:netlify": "npm run build && netlify deploy --prod --dir=dist",
+    "deploy:all": "npm run build && npm run deploy:firebase && npm run deploy:vercel && npm run deploy:netlify"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.81.1",
     "crypto-js": "^4.2.0",
     "firebase": "^12.5.0",
     "lucide-react": "^0.553.0",

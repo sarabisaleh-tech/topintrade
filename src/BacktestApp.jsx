@@ -178,6 +178,18 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
   const [editingTrade, setEditingTrade] = useState(null);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  // Welcome modal - نمایش پیام خوش‌آمدگویی برای کاربران جدید یا اولین بار
+  useEffect(() => {
+    if (currentUser && !isSharedView) {
+      const hasSeenWelcome = localStorage.getItem(`welcomeShown_${currentUser.uid}`);
+      if (!hasSeenWelcome) {
+        setTimeout(() => setShowWelcomeModal(true), 1000);
+        localStorage.setItem(`welcomeShown_${currentUser.uid}`, 'true');
+      }
+    }
+  }, [currentUser, isSharedView]);
 
   // تست Firestore در window برای debug
   useEffect(() => {
@@ -489,7 +501,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
       const currentSessionElapsed = now - trackingStartTime;
       const totalAccumulated = todayAccumulatedTime + currentSessionElapsed;
 
-      console.log('💾 Auto-saving tracking time (every 5s):', {
+      console.log('💾 Auto-saving tracking time (every 2s):', {
         totalAccumulated: Math.floor(totalAccumulated / 60000) + 'm',
         todayAccumulated: Math.floor(todayAccumulatedTime / 60000) + 'm',
         currentSession: Math.floor(currentSessionElapsed / 60000) + 'm'
@@ -504,7 +516,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
         isTrackingTime,
         trackingStartTime
       );
-    }, 5000); // Every 5 seconds
+    }, 2000); // Every 2 seconds
 
     return () => clearInterval(saveInterval);
   }, [isTrackingTime, trackingStartTime, todayAccumulatedTime, todayAccumulatedDate, currentUser, trackingSessions]);
@@ -1673,11 +1685,11 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
     }
 
     try {
-      // ساخت یک ID منحصر به فرد برای share link
-      const shareId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const token = localStorage.getItem('authToken');
 
       // تبدیل trades به فرمت مناسب ShareBacktest
-      const shareData = {
+      const backtestData = {
         name: currentBt.name,
         balance: currentBt.balance,
         balanceType: currentBt.balanceType,
@@ -1698,15 +1710,31 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
         createdAt: new Date().toISOString()
       };
 
-      // ذخیره در Firestore
-      await setDoc(doc(db, 'shared_backtests', shareId), shareData);
+      // ذخیره در Backend API
+      console.log('📤 Sharing backtest to:', `${API_URL}/api/share/backtest`);
+      const response = await fetch(`${API_URL}/api/share/backtest`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ backtestData })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Share failed:', response.status, errorData);
+        throw new Error(errorData.error || 'Failed to share backtest');
+      }
+
+      const data = await response.json();
+      const shareId = data.shareId;
 
       // ساخت لینک (استفاده از hash برای dev mode)
-      // در production باید از pathname استفاده کنیم
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const shareUrl = isLocalhost
-        ? `${window.location.origin}/#/share/backtest/${shareId}`
-        : `${window.location.origin}/share/backtest/${shareId}`;
+        ? `${window.location.origin}/#/share/${shareId}`
+        : `${window.location.origin}/share/${shareId}`;
 
       // کپی کردن لینک به کلیپبورد
       navigator.clipboard.writeText(shareUrl).then(() => {
@@ -1814,8 +1842,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
     : [
         { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
         { id: 'stopAnalysis', label: 'Stop Analysis', icon: Target },
-        { id: 'monthlyReport', label: 'Monthly Report', icon: Calendar },
-        { id: 'allTrades', label: 'All Trades', icon: TrendingDown }
+        { id: 'monthlyReport', label: 'Monthly Report', icon: Calendar }
       ];
   // محاسبه Orig Target - کمترین Peak Target در بین 80% بالاترین ماه‌ها
   const avgMonthlyTarget = useMemo(() => {
@@ -1871,7 +1898,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
           50% { opacity: 0.3; }
         }
         .starry-bg {
-          background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+          background: #000000;
           position: relative;
           min-height: 100vh;
         }
@@ -1937,10 +1964,6 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
                 <h1 className="text-lg font-bold flex items-center gap-2">
                   Top In Trade
                 </h1>
-                <p className="text-xs text-gray-400">
-                  Professional Backtest Platform
-                  {!currentUser && <span className="ml-2 text-blue-400">👁️ Guest Mode</span>}
-                </p>
               </div>
             </div>
 
@@ -2845,9 +2868,9 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
                     <AreaChart data={equityCurve} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.8}/>
-                          <stop offset="30%" stopColor="#3b82f6" stopOpacity={0.5}/>
-                          <stop offset="70%" stopColor="#1e40af" stopOpacity={0.2}/>
+                          <stop offset="0%" stopColor="#a855f7" stopOpacity={0.8}/>
+                          <stop offset="30%" stopColor="#9333ea" stopOpacity={0.5}/>
+                          <stop offset="70%" stopColor="#7e22ce" stopOpacity={0.2}/>
                           <stop offset="100%" stopColor="#000000" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
@@ -2883,7 +2906,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
                       <Area
                         type="monotone"
                         dataKey="equity"
-                        stroke="#60a5fa"
+                        stroke="#a855f7"
                         strokeWidth={3}
                         fill="url(#equityGradient)"
                         name="Equity"
@@ -2891,7 +2914,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
                       />
                     </AreaChart>
                   </ResponsiveContainer>
-                  
+
                   <div className="flex flex-wrap gap-2 mt-4">
                     <button
                       onClick={() => setSelectedMonth('all')}
@@ -2948,6 +2971,32 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
                           : stats.totalTrades}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Social Media Links */}
+                  <div className="flex items-center justify-center gap-4 mt-4 mb-2">
+                    <a
+                      href="https://www.youtube.com/@TopInTrade"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 rounded-lg transition text-sm text-red-400 hover:text-red-300"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      </svg>
+                      YouTube
+                    </a>
+                    <a
+                      href="https://www.instagram.com/titopintrade"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/50 rounded-lg transition text-sm text-pink-400 hover:text-pink-300"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                      Instagram
+                    </a>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between bg-gray-800/50 backdrop-blur rounded-lg p-4 border border-gray-700">
@@ -4970,6 +5019,60 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
               بستن پنل ادمین
             </button>
             <AdminPanel />
+          </div>
+        </div>
+      )}
+
+      {/* Welcome Modal */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-gradient-to-br from-purple-900/90 to-gray-900/90 rounded-2xl border-2 border-purple-500/50 p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 mx-auto mb-4 bg-purple-500/20 rounded-full flex items-center justify-center">
+                <span className="text-5xl">🎉</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">خوش آمدید!</h2>
+              <p className="text-purple-300 text-sm">به پلتفرم تحلیل معاملات Top In Trade</p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-6 mb-6 border border-purple-500/30">
+              <p className="text-white text-center leading-relaxed mb-4">
+                خوشحالم که اینجایی! برای این سایت زحمت زیادی کشیده شده و الان رایگان در اختیارته.
+                پس بیا این دوستی دوطرفه کنیم، توام با دنبال کردن صفحات مارو ما رو حمایت کن 💜
+              </p>
+
+              <div className="flex flex-col gap-3 mt-4">
+                <a
+                  href="https://www.youtube.com/@TopInTrade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg transition text-white font-medium"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  دنبال کردن در YouTube
+                </a>
+                <a
+                  href="https://www.instagram.com/titopintrade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition text-white font-medium"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                  دنبال کردن در Instagram
+                </a>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowWelcomeModal(false)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition"
+            >
+              بزن بریم! 🚀
+            </button>
           </div>
         </div>
       )}
