@@ -1,0 +1,12 @@
+node_modules
+backend
+.git
+.env
+*.log
+.DS_Store
+.vscode
+dist-ssr
+*.local
+.firebase
+database.db
+database.db.backup
