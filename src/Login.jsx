@@ -127,7 +127,7 @@ export default function Login() {
             {/* Name (فقط برای ثبت‌نام) */}
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-white drop-shadow-lg mb-2">
                   نام
                 </label>
                 <input
@@ -145,7 +145,7 @@ export default function Login() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white drop-shadow-lg mb-2">
                 ایمیل
               </label>
               <input
@@ -161,7 +161,7 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white drop-shadow-lg mb-2">
                 رمز عبور
               </label>
               <input
@@ -182,7 +182,7 @@ export default function Login() {
             {/* Confirm Password (فقط برای ثبت‌نام) */}
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-white drop-shadow-lg mb-2">
                   تایید رمز عبور
                 </label>
                 <input
@@ -210,7 +210,7 @@ export default function Login() {
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-white drop-shadow-lg mb-2">
                       کد دعوت
                     </label>
                     <input
