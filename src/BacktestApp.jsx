@@ -1677,6 +1677,7 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
     a.click();
   };
 
+  // Import CSV and merge with existing trades (sorted by date/time)
   const handleImportCSV = (event) => {
     const file = event.target.files[0];
     if (!file) return;
