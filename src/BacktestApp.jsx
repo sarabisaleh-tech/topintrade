@@ -1677,6 +1677,68 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
     a.click();
   };
 
+  const handleImportCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(line => line.trim());
+
+        // Skip header row
+        const dataLines = lines.slice(1);
+
+        // Parse CSV rows
+        const importedTrades = dataLines.map((line, index) => {
+          const values = line.split(',').map(v => v.trim());
+          return {
+            id: Date.now() + index, // Unique ID
+            date: values[0] || new Date().toISOString().split('T')[0],
+            time: values[1] || '00:00',
+            position: values[2] || 'long',
+            risk: parseFloat(values[3]) || 1,
+            rrRatio: parseFloat(values[4]) || 2,
+            stopLoss: parseFloat(values[5]) || 1,
+            stopLossType: values[6] || 'percent',
+            result: values[7] || 'profit',
+            pnl: parseFloat(values[8]) || 0,
+            tag: values[9] || '',
+            screenshotUrl: values[10] || ''
+          };
+        });
+
+        // Get existing trades
+        const existingTrades = backtests[currentBacktest]?.trades || [];
+
+        // Combine and sort by date/time
+        const combinedTrades = [...existingTrades, ...importedTrades].sort((a, b) => {
+          const dateA = new Date(`${a.date}T${a.time}`);
+          const dateB = new Date(`${b.date}T${b.time}`);
+          return dateA - dateB;
+        });
+
+        // Update backtest with combined trades
+        const updatedBacktests = [...backtests];
+        updatedBacktests[currentBacktest] = {
+          ...updatedBacktests[currentBacktest],
+          trades: combinedTrades
+        };
+
+        setBacktests(updatedBacktests);
+        alert(`✅ Successfully imported ${importedTrades.length} trades!\nTotal trades: ${combinedTrades.length}`);
+      } catch (error) {
+        console.error('Error importing CSV:', error);
+        alert('❌ Error importing CSV file. Please check the file format.');
+      }
+    };
+
+    reader.readAsText(file);
+    // Reset input so same file can be imported again
+    event.target.value = '';
+  };
+
   const handleShareBacktest = async () => {
     const currentBt = backtests[currentBacktest];
     if (!currentBt || !currentBt.trades || currentBt.trades.length === 0) {
