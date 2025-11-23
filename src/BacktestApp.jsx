@@ -1821,28 +1821,6 @@ export default function BacktestApp({ onBack, isSharedView = false, sharedBackte
     return 'NewYork';
   };
 
-  const handleImportCSV = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target.result;
-      const lines = text.split('\n');
-      const trades = [];
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const [date, time, position, risk, rrRatio, stopLoss, stopLossType, result, pnl, tag, screenshotUrl] = lines[i].split(',');
-        trades.push({ id: Date.now() + i, date, time, position, risk: parseFloat(risk), rrRatio: parseFloat(rrRatio), stopLoss: parseFloat(stopLoss), stopLossType: stopLossType || 'percent', result, pnl: parseFloat(pnl), tag: tag || '', screenshotUrl: screenshotUrl || '' });
-      }
-      const ub = [...backtests];
-      // جایگزینی کامل به جای اضافه شدن
-      ub[currentBacktest].trades = trades;
-      setBacktests(ub);
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
   useEffect(() => {
     if (currentUser?.uid) {
       saveTradeFormDefaults(currentUser.uid, {
